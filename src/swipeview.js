@@ -77,9 +77,6 @@ define('swipeview', [], function() {
 			
 			this.masterPages = [];
 
-
-
-
 			div = document.getElementById('preloads-inner');
 			this.slider = div;
 
@@ -96,7 +93,7 @@ define('swipeview', [], function() {
 
 				this.masterPages.push(div);
 			}
-			
+
 			className = this.masterPages[1].className;
 			this.masterPages[1].className = !className ? 'swipeview-active' : className + ' swipeview-active';
 
