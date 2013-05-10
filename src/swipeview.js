@@ -2,7 +2,7 @@
  * SwipeView v1.0 ~ Copyright (c) 2012 Matteo Spinelli, http://cubiq.org
  * Released under MIT license, http://cubiq.org/license
  */
-var SwipeView = (function (window, document) {
+define('swipeview', [], function() {
 	var dummyStyle = document.createElement('div').style,
 		vendor = (function () {
 			var vendors = 't,webkitT,MozT,msT,OT'.split(','),
@@ -27,7 +27,7 @@ var SwipeView = (function (window, document) {
 
 		// Browser capabilities
 		has3d = prefixStyle('perspective') in dummyStyle,
-		hasTouch = 'ontouchstart' in window,
+		hasTouch = true,
 		hasTransform = !!vendor,
 		hasTransitionEnd = prefixStyle('transition') in dummyStyle,
 
@@ -76,27 +76,24 @@ var SwipeView = (function (window, document) {
 			this.wrapper.style.position = 'relative';
 			
 			this.masterPages = [];
-			
-			div = document.createElement('div');
-			div.id = 'swipeview-slider';
-			div.style.cssText = 'position:relative;top:0;height:100%;width:100%;' + cssVendor + 'transition-duration:0;' + cssVendor + 'transform:translateZ(0);' + cssVendor + 'transition-timing-function:ease-out';
-			this.wrapper.appendChild(div);
+
+
+
+
+			div = document.getElementById('preloads-inner');
 			this.slider = div;
 
 			this.refreshSize();
 
 			for (i=-1; i<2; i++) {
-				div = document.createElement('div');
-				div.id = 'swipeview-masterpage-' + (i+1);
-				div.style.cssText = cssVendor + 'transform:translateZ(0);position:absolute;top:0;height:100%;width:100%;left:' + i*100 + '%';
+				div = document.getElementById('preload-' + (i+1));
 				if (!div.dataset) div.dataset = {};
 				pageIndex = i == -1 ? this.options.numberOfPages - 1 : i;
 				div.dataset.pageIndex = pageIndex;
 				div.dataset.upcomingPageIndex = pageIndex;
-				
+
 				if (!this.options.loop && i == -1) div.style.visibility = 'hidden';
 
-				this.slider.appendChild(div);
 				this.masterPages.push(div);
 			}
 			
@@ -311,6 +308,11 @@ var SwipeView = (function (window, document) {
 		__move: function (e) {
 			if (!this.initiated) return;
 
+			if (e.target.className.match(/(gallery|control)/)) {
+				this.initiated = false;
+				return;
+			}
+
 			var point = hasTouch ? e.touches[0] : e,
 				deltaX = point.pageX - this.pointX,
 				deltaY = point.pageY - this.pointY,
@@ -324,8 +326,8 @@ var SwipeView = (function (window, document) {
 			this.stepsX += Math.abs(deltaX);
 			this.stepsY += Math.abs(deltaY);
 
-			// We take a 10px buffer to figure out the direction of the swipe
-			if (this.stepsX < 10 && this.stepsY < 10) {
+			// We take a 5px buffer to figure out the direction of the swipe
+			if (this.stepsX < 5 && this.stepsY < 5) {
 //				e.preventDefault();
 				return;
 			}
@@ -363,7 +365,7 @@ var SwipeView = (function (window, document) {
 			if (!this.initiated) return;
 			
 			var point = hasTouch ? e.changedTouches[0] : e,
-				dist = Math.abs(point.pageX - this.startX);
+				dist = point.pageX - this.startX;
 
 			this.initiated = false;
 			
@@ -375,8 +377,14 @@ var SwipeView = (function (window, document) {
 			}
 
 			// Check if we exceeded the snap threshold
-			if (dist < this.snapThreshold) {
-				this.slider.style[transitionDuration] = Math.floor(300 * dist / this.snapThreshold) + 'ms';
+			if (Math.abs(dist) < this.snapThreshold) {
+				this.slider.style[transitionDuration] = Math.floor(300 * Math.abs(dist) / this.snapThreshold) + 'ms';
+				this.__pos(-this.page * this.pageWidth);
+				return;
+			}
+			// Check if swipe was cancelled by reversing swipe direction
+			if ((dist < 0 && this.directionX >= 0) || (dist > 0 && this.directionX <= 0)) {
+				this.slider.style[transitionDuration] = Math.floor(300 * Math.abs(dist) / this.pageWidth) + 'ms';
 				this.__pos(-this.page * this.pageWidth);
 				return;
 			}
@@ -427,7 +435,7 @@ var SwipeView = (function (window, document) {
 
 			newX = -this.page * this.pageWidth;
 			
-			this.slider.style[transitionDuration] = Math.floor(500 * Math.abs(this.x - newX) / this.pageWidth) + 'ms';
+			this.slider.style[transitionDuration] = Math.floor(300 * Math.abs(this.x - newX) / this.pageWidth) + 'ms';
 
 			// Hide the next page if we decided to disable looping
 			if (!this.options.loop) {
@@ -468,4 +476,4 @@ var SwipeView = (function (window, document) {
 	}
 
 	return SwipeView;
-})(window, document);
+});
